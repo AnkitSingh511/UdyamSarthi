@@ -1,0 +1,24 @@
+{
+  "status": "success",
+  "ai_analysis_time": "1.2s",
+  "advisory": {
+    "market_advice": {
+      "title": "Smart Buying (स्मार्ट खरीदी)",
+      "message": "Agle hafte Holi ka tyohar hai. Wholesale market me Maida aur Refined Tel ka rate abhi gira hua hai. Inhe aaj hi bulk me lijiye, munafa acha hoga.",
+      "action_item": "Buy Refined Tel & Maida",
+      "icon": "📈"
+    },
+    "financial_advice": {
+      "title": "Cash Flow Alert (खाता अलर्ट)",
+      "message": "Aapke paas ₹15,500 liquid cash bacha hai aur ₹4,500 udhaari me hai. Naya stock uthane ke liye cash adequate hai, par nayi udhaari dene se bachein.",
+      "action_item": "Collect Pending Dues",
+      "icon": "💰"
+    },
+    "growth_advice": {
+      "title": "Dead Stock Warning (स्टॉक चेतावनी)",
+      "message": "Aapka ₹1,700 'Premium Sabun' me fasa hai jo 65 din se nahi bika. Ise 10% discount par counter ke aage display karein taaki cash free ho sake.",
+      "action_item": "Clear Premium Soap",
+      "icon": "🚀"
+    }
+  }
+}

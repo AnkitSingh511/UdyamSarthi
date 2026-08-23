@@ -1,0 +1,19 @@
+{
+  "shop_id": "kirana_001",
+  "owner_name": "Ramesh Kumar",
+  "financials": {
+    "liquid_cash_in_hand": 15500,
+    "total_market_credit": 4500,
+    "today_sales": 3200
+  },
+  "inventory_alerts": {
+    "low_stock": ["Refined Tel (15 Ltr)", "Maida (50 Kg)"],
+    "dead_stock": [
+      {
+        "item_name": "Premium Sabun (Box)",
+        "days_in_shop": 65,
+        "blocked_amount": 1700
+      }
+    ]
+  }
+}

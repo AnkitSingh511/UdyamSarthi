@@ -1,0 +1,35 @@
+{
+  "status": "success",
+  "location": "Ghaziabad, UP",
+  "last_updated": "2026-08-23T10:00:00Z",
+  "items": [
+    {
+      "item_id": "101",
+      "name": "Refined Tel (15 Ltr)",
+      "current_price": 1450,
+      "trend": "down",
+      "trend_percentage": 5
+    },
+    {
+      "item_id": "102",
+      "name": "Maida (50 Kg)",
+      "current_price": 1200,
+      "trend": "down",
+      "trend_percentage": 2
+    },
+    {
+      "item_id": "103",
+      "name": "Premium Sabun (Box)",
+      "current_price": 850,
+      "trend": "stable",
+      "trend_percentage": 0
+    },
+    {
+      "item_id": "104",
+      "name": "Pyaj (Per Kg - Wholesale)",
+      "current_price": 25,
+      "trend": "up",
+      "trend_percentage": 10
+    }
+  ]
+}
