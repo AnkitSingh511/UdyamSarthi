@@ -1,50 +1,82 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { DEMO_PROFILES } from '../data/mockDatasets';
-import { X, UserCheck, ShieldCheck, Sprout, Milk, ShoppingBag, Factory, Lock } from 'lucide-react';
+import { api } from '../services/api';
+import { X, UserCheck, ShieldCheck, Sprout, Milk, ShoppingBag, Factory, Lock, UserPlus } from 'lucide-react';
 
 export const AuthModal = ({ isOpen, onClose }) => {
   const { loginUser, t } = useApp();
+  const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('farmer');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleCustomSubmit = (e) => {
+  const handleCustomSubmit = async (e) => {
     e.preventDefault();
-    if (!username.trim()) {
-      setError('Please enter a valid username');
+    setError('');
+
+    if (!username.trim() || !password.trim()) {
+      setError('Please enter username and password');
       return;
     }
-    
-    // Check if matches demo or build new custom user
-    const matched = DEMO_PROFILES.find(p => p.username.toLowerCase() === username.trim().toLowerCase());
-    if (matched) {
-      loginUser(matched);
-    } else {
-      loginUser({
-        username: username.trim(),
-        name: username.trim().replace('_', ' '),
-        category: 'farmer',
-        districtId: 'karnal',
-        phone: '+91 98000 00000',
-        details: {
-          landSizeAcres: 3.0,
-          cropType: 'Wheat',
-          monthlyRevenue: 45000,
-          monthlyExpenses: 20000,
-          loanRequiredAmount: 100000,
-          loanPurpose: 'Agri equipment & fertilizer purchase'
+
+    setLoading(true);
+    try {
+      if (isRegister) {
+        if (!name.trim()) {
+          setError('Please enter your full name');
+          setLoading(false);
+          return;
         }
-      });
+        const res = await api.register({
+          username: username.trim(),
+          password: password.trim(),
+          name: name.trim(),
+          category,
+          districtId: 'karnal'
+        });
+        loginUser(res.user);
+      } else {
+        // Try Backend Login
+        try {
+          const res = await api.login(username.trim(), password.trim());
+          loginUser(res.user);
+        } catch (apiErr) {
+          // Fallback check if user matches offline demo profile
+          const matched = DEMO_PROFILES.find(p => p.username.toLowerCase() === username.trim().toLowerCase());
+          if (matched) {
+            loginUser(matched);
+          } else {
+            throw apiErr;
+          }
+        }
+      }
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Authentication failed. Check your credentials or backend server status.');
+    } finally {
+      setLoading(false);
     }
-    onClose();
   };
 
-  const handleDemoSelect = (profile) => {
-    loginUser(profile);
-    onClose();
+  const handleDemoSelect = async (profile) => {
+    setLoading(true);
+    try {
+      // Attempt backend authentication for demo user (default password: password123)
+      const res = await api.login(profile.username, 'password123');
+      loginUser(res.user);
+    } catch (err) {
+      // Fallback offline login
+      loginUser(profile);
+    } finally {
+      setLoading(false);
+      onClose();
+    }
   };
 
   const getCategoryIcon = (cat) => {
@@ -52,6 +84,7 @@ export const AuthModal = ({ isOpen, onClose }) => {
       case 'farmer': return <Sprout className="w-5 h-5 text-emerald-400" />;
       case 'dairy': return <Milk className="w-5 h-5 text-sky-400" />;
       case 'retail': return <ShoppingBag className="w-5 h-5 text-amber-400" />;
+      case 'food_vendor':
       case 'food_processing': return <Factory className="w-5 h-5 text-purple-400" />;
       default: return <UserCheck className="w-5 h-5 text-slate-400" />;
     }
@@ -65,7 +98,9 @@ export const AuthModal = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-900/50">
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-6 h-6 text-brand-400" />
-            <h2 className="text-lg font-bold text-white">{t.login} - UdyamSarthi</h2>
+            <h2 className="text-lg font-bold text-white">
+              {isRegister ? 'Register' : t.login} - UdyamSarthi
+            </h2>
           </div>
           <button 
             onClick={onClose}
@@ -79,59 +114,96 @@ export const AuthModal = ({ isOpen, onClose }) => {
         <div className="p-6 space-y-6">
           
           {/* Quick 1-Click Demo Profiles */}
-          <div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-3">
-              Fast Demo Login (Select Micro-Entrepreneur Profile)
-            </label>
-            <div className="grid grid-cols-2 gap-2.5">
-              {DEMO_PROFILES.map((profile) => (
-                <button
-                  key={profile.username}
-                  onClick={() => handleDemoSelect(profile)}
-                  className="flex items-center space-x-2.5 p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-brand-500/50 text-left transition-all group"
-                >
-                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 group-hover:scale-105 transition-transform">
-                    {getCategoryIcon(profile.category)}
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-200 group-hover:text-brand-300">
-                      {profile.name}
+          {!isRegister && (
+            <div>
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-3">
+                Fast Demo Login (Select Micro-Entrepreneur Profile)
+              </label>
+              <div className="grid grid-cols-2 gap-2.5">
+                {DEMO_PROFILES.map((profile) => (
+                  <button
+                    key={profile.username}
+                    onClick={() => handleDemoSelect(profile)}
+                    className="flex items-center space-x-2.5 p-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 hover:border-brand-500/50 text-left transition-all group"
+                  >
+                    <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 group-hover:scale-105 transition-transform">
+                      {getCategoryIcon(profile.category)}
                     </div>
-                    <div className="text-[10px] text-slate-400 capitalize">
-                      {profile.category.replace('_', ' ')}
+                    <div>
+                      <div className="text-xs font-bold text-slate-200 group-hover:text-brand-300">
+                        {profile.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 capitalize">
+                        {profile.category.replace('_', ' ')}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="flex items-center my-4">
-            <div className="flex-1 border-t border-slate-800"></div>
-            <span className="px-3 text-[11px] text-slate-500 uppercase tracking-wider">or sign in with custom credentials</span>
-            <div className="flex-1 border-t border-slate-800"></div>
-          </div>
+          {!isRegister && (
+            <div className="flex items-center my-4">
+              <div className="flex-1 border-t border-slate-800"></div>
+              <span className="px-3 text-[11px] text-slate-500 uppercase tracking-wider">or sign in with JWT auth</span>
+              <div className="flex-1 border-t border-slate-800"></div>
+            </div>
+          )}
 
-          {/* Custom Credentials Form */}
+          {/* Form */}
           <form onSubmit={handleCustomSubmit} className="space-y-4">
             {error && (
               <div className="p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium">
                 {error}
               </div>
             )}
+
+            {isRegister && (
+              <>
+                <div>
+                  <label className="text-xs font-medium text-slate-300 block mb-1.5">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Ramesh Kumar"
+                    className="w-full pl-3 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-slate-300 block mb-1.5">
+                    Category
+                  </label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full pl-3 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-brand-500"
+                  >
+                    <option value="farmer">Farmer / Crop Producer</option>
+                    <option value="dairy">Dairy & Livestock</option>
+                    <option value="retail">Kirana & Retail Store</option>
+                    <option value="food_vendor">Food Processing & Vendor</option>
+                    <option value="artisan">Handicraft & Artisan</option>
+                    <option value="apparel">Textile & Apparel</option>
+                  </select>
+                </div>
+              </>
+            )}
+
             <div>
               <label className="text-xs font-medium text-slate-300 block mb-1.5">
-                Username / Mobile Number
+                Username / Phone
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. ramesh_farmer or 9812345678"
-                  className="w-full pl-3 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
-                />
-              </div>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. ramesh_farmer or 9812345678"
+                className="w-full pl-3 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500"
+              />
             </div>
 
             <div>
@@ -152,10 +224,25 @@ export const AuthModal = ({ isOpen, onClose }) => {
 
             <button
               type="submit"
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-semibold text-xs shadow-lg shadow-brand-500/25 transition-all"
+              disabled={loading}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-semibold text-xs shadow-lg shadow-brand-500/25 transition-all disabled:opacity-50"
             >
-              {t.login}
+              {loading ? 'Processing...' : isRegister ? 'Create Account & Sign In' : t.login}
             </button>
+
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => { setIsRegister(!isRegister); setError(''); }}
+                className="text-xs text-brand-400 hover:underline inline-flex items-center space-x-1"
+              >
+                {isRegister ? (
+                  <span>Already have an account? Sign In</span>
+                ) : (
+                  <span>New user? Create a MongoDB user account</span>
+                )}
+              </button>
+            </div>
           </form>
 
         </div>

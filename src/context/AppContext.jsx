@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { translations } from '../data/translations';
 import { DISTRICTS, DEMO_PROFILES, SPATIAL_ENTITIES, PM_MUDRA_SCHEME_DATA } from '../data/mockDatasets';
+import { api, getAuthToken, setAuthToken } from '../services/api';
 
 const AppContext = createContext();
 
@@ -21,6 +22,21 @@ export const AppProvider = ({ children }) => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
+  }, []);
+
+  // Sync session from JWT token on mount
+  useEffect(() => {
+    const syncTokenSession = async () => {
+      if (getAuthToken()) {
+        const currentUser = await api.getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          if (currentUser.category) setCategory(currentUser.category);
+          if (currentUser.details) setProfileData(currentUser.details);
+        }
+      }
+    };
+    syncTokenSession();
   }, []);
 
   const toggleOnlineMode = () => {
@@ -60,6 +76,8 @@ export const AppProvider = ({ children }) => {
       localStorage.setItem('udyamsarthi_activity', JSON.stringify(updated));
       return updated;
     });
+    // Fire-and-forget sync to backend activity log
+    api.logActivity(action, details);
   };
 
   const loginUser = (profileObj) => {
@@ -82,6 +100,7 @@ export const AppProvider = ({ children }) => {
     logActivity('User Logout', `User ${user?.name || 'Guest'} logged out`);
     setUser(null);
     localStorage.removeItem('udyamsarthi_user');
+    setAuthToken(null);
   };
 
   // 4. Business Category & Profile Inputs
